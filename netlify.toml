@@ -1,11 +1,16 @@
-# Netlify Configuration for SignBridge Landing Page
+# Netlify Configuration for SignBridge Application
 
 [build]
-  # No build command needed - static HTML/CSS/JS
-  publish = "."
-  
+  base = "app"
+  command = "npm run build"
+  publish = ".next"
+
 [build.environment]
   NODE_VERSION = "18"
+  NPM_VERSION = "9"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 # Redirect rules
 [[redirects]]
@@ -14,32 +19,25 @@
   status = 200
   force = false
 
-# Headers for security and performance
+# Security headers for HIPAA compliance
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(self), microphone=(self), geolocation=(), payment=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://daily.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.daily.co wss://daily.co; media-src 'self' https: blob:; frame-src 'self' https://daily.co;"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
+# Cache static assets
 [[headers]]
-  for = "/*.css"
+  for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/*.js"
+  for = "/images/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.woff2"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Custom 404 page (optional)
-# [[redirects]]
-#   from = "/404"
-#   to = "/404.html"
-#   status = 404
+    Cache-Control = "public, max-age=604800"
