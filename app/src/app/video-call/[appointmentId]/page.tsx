@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/hooks'
 import { useVideoCall, useCaptions, useTextToSpeech } from '@/lib/video/hooks'
+import { useSpanishTranslation } from '@/lib/translation/hooks'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -67,6 +68,14 @@ export default function VideoCallPage() {
   const [isScreenSharing, setIsScreenSharing] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+
+  // Bilingual caption support
+  const [showSpanishCaptions, setShowSpanishCaptions] = useState(false)
+  const latestCaption = captions[captions.length - 1] || ''
+  const { translatedText: spanishCaption, isTranslating } = useSpanishTranslation(
+    latestCaption,
+    showSpanishCaptions && captionsEnabled
+  )
 
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
@@ -297,18 +306,40 @@ export default function VideoCallPage() {
 
           {/* Live captions */}
           {captionsEnabled && (
-            <div className="absolute bottom-20 left-0 right-0 bg-black/90 text-white p-4 mx-4 rounded-lg max-h-32 overflow-y-auto">
-              {captions.length > 0 ? (
-                captions.map((caption, index) => (
-                  <p key={index} className="text-lg mb-1">
-                    {caption}
+            <div className="absolute bottom-20 left-0 right-0 mx-4">
+              <div className="bg-black/90 text-white rounded-lg max-h-32 overflow-y-auto">
+                {captions.length > 0 ? (
+                  <div className="p-4 space-y-2">
+                    {/* English caption */}
+                    <p className="text-lg font-medium">{latestCaption}</p>
+
+                    {/* Spanish caption */}
+                    {showSpanishCaptions && (
+                      <div className="border-t border-white/20 pt-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs text-deaf-turquoise font-medium">
+                            ESPAÑOL
+                          </span>
+                          {isTranslating && (
+                            <span className="text-xs text-gray-400 italic">
+                              traduciendo...
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-lg text-blue-300">
+                          {spanishCaption || latestCaption}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="p-4 text-gray-400 italic">
+                    {showSpanishCaptions
+                      ? 'Listening for speech... / Escuchando...'
+                      : 'Listening for speech...'}
                   </p>
-                ))
-              ) : (
-                <p className="text-gray-400 italic">
-                  Listening for speech...
-                </p>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -436,6 +467,21 @@ export default function VideoCallPage() {
             >
               <span className="text-xl font-bold text-deaf-navy">CC</span>
             </Button>
+            {captionsEnabled && (
+              <Button
+                onClick={() => setShowSpanishCaptions(!showSpanishCaptions)}
+                variant={showSpanishCaptions ? 'default' : 'outline'}
+                size="lg"
+                className="rounded-full h-12 w-12 bg-white hover:bg-gray-100"
+                title={
+                  showSpanishCaptions
+                    ? 'Hide Spanish captions'
+                    : 'Show Spanish captions'
+                }
+              >
+                <span className="text-sm font-bold text-deaf-navy">ES</span>
+              </Button>
+            )}
             {profile?.role === 'provider' && (
               <Button
                 onClick={handleRecording}
